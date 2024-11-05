@@ -1,0 +1,42 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  # Перший пайплайн з паралельними кроками для тестів та лінтингу
+  test_and_lint:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.8", "3.9", "3.10"]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install flake8  # Лінтер для Python
+
+      # Крок 1: Запуск тестів
+      - name: Run Tests
+        run: |
+          python -m unittest discover -s . -p "test_*.py"
+
+      # Крок 2: Запуск лінтера
+      - name: Run Linter
+        run: |
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
